@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP网段计算器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>IP网段计算器</h1>
+        <p class="subtitle">支持IPv4和IPv6网段分割计算</p>
+        
+        <div class="calculator">
+            <form id="subnetForm">
+                <div class="input-group">
+                    <label for="ipType">IP类型:</label>
+                    <select id="ipType">
+                        <option value="ipv4">IPv4</option>
+                        <option value="ipv6">IPv6</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="baseCidr">基础网段 (CIDR格式):</label>
+                    <input type="text" id="baseCidr" placeholder="例如: 192.168.0.0/24 或 2001:db8::/32" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>分割方式:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="bySubnetCount" name="splitType" value="count" checked>
+                        <label for="bySubnetCount">按子网数量</label>
+                        <input type="radio" id="bySubnetSize" name="splitType" value="size">
+                        <label for="bySubnetSize">按子网大小</label>
+                    </div>
+                </div>
+                
+                <div class="input-group" id="subnetCountGroup">
+                    <label for="subnetCount">子网数量:</label>
+                    <input type="number" id="subnetCount" value="4" min="2" max="256">
+                </div>
+                
+                <div class="input-group" id="subnetSizeGroup" style="display: none;">
+                    <label for="subnetSize">子网掩码位数:</label>
+                    <input type="number" id="subnetSize" min="1" max="128">
+                </div>
+                
+                <button type="submit" class="calculate-btn">计算子网</button>
+            </form>
+            
+            <div id="resultSection" style="display: none;">
+                <h3>计算结果</h3>
+                <div class="result-info">
+                    <p>基础网段: <span id="baseCidrResult"></span></p>
+                    <p>可分配地址数: <span id="totalAddresses"></span></p>
+                    <p>子网数量: <span id="resultSubnetCount"></span></p>
+                </div>
+                
+                <div class="subnets-table-container">
+                    <div class="export-buttons">
+                        <div>
+                            <button id="copyButton" class="export-btn">一键复制</button>
+                            <p class="button-hint">仅复制网段</p>
+                        </div>
+                        <div>
+                            <button id="exportButton" class="export-btn">导出Excel</button>
+                            <p class="button-hint">仅导出网段</p>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="subnetsTable">
+                            <thead>
+                                <tr>
+                                    <th>子网序号</th>
+                                    <th>网段</th>
+                                    <th>起始地址</th>
+                                    <th>结束地址</th>
+                                    <th>可用地址数</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subnetsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="errorMessage" class="error" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
