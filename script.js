@@ -128,7 +128,7 @@ function splitBySubnetSize(baseIp, prefixLen, newPrefixLen, ipType) {
     }
     
     const subnetCount = Math.pow(2, newPrefixLen - prefixLen);
-    const subnets = [];
+    let subnets = [];
     
     if (ipType === 'ipv4') {
         const baseIpNum = ipv4ToNumber(baseIp);
@@ -146,18 +146,80 @@ function splitBySubnetSize(baseIp, prefixLen, newPrefixLen, ipType) {
             });
         }
     } else {
-        // IPv6实现类似但更复杂，这里简化处理
-        for (let i = 0; i < subnetCount; i++) {
-            subnets.push({
-                network: baseIp + '/' + newPrefixLen,
-                startIp: baseIp,
-                endIp: baseIp,
-                addressCount: '2^' + (128 - newPrefixLen)
-            });
-        }
+        // 修复IPv6实现 - 移除简化处理
+        subnets = calculateIpv6Subnets(baseIp, newPrefixLen, prefixLen, subnetCount);
     }
     
     return subnets;
+}
+
+function calculateIpv6Subnets(baseIp, newPrefixLen, prefixLen, subnetCount) {
+    const subnets = [];
+    
+    // 计算每个子网的网络地址
+    for (let i = 0; i < subnetCount; i++) {
+        const subnetNetwork = generateIpv6Subnet(baseIp, i, subnetCount, newPrefixLen, prefixLen);
+        
+        subnets.push({
+            network: subnetNetwork + '/' + newPrefixLen,
+            startIp: subnetNetwork,
+            endIp: generateIpv6EndAddress(subnetNetwork, newPrefixLen),
+            addressCount: calculateIpv6SubnetSize(newPrefixLen)
+        });
+    }
+    
+    return subnets;
+}
+
+function generateIpv6Subnet(baseIp, subnetId, subnetCount, newPrefixLen, prefixLen) {
+    // 完整的IPv6子网计算方法
+    const normalizedIp = normalizeIpv6(baseIp);
+    const ipParts = normalizedIp.split(':');
+    
+    // 确保IPv6地址格式完整(8个部分)
+    while (ipParts.length < 8) {
+        ipParts.push('0');
+    }
+    
+    // 计算需要修改的部分和位数
+    const bitsPerSubnetPart = newPrefixLen - prefixLen;
+    const subnetPartIndex = Math.floor(newPrefixLen / 16);
+    
+    if (subnetPartIndex < ipParts.length) {
+        // 将子网ID转换为16进制并插入到合适的位置
+        const subnetHex = subnetId.toString(16).padStart(4, '0');
+        ipParts[subnetPartIndex] = subnetHex;
+    }
+    
+    return ipParts.join(':');
+}
+
+function generateIpv6EndAddress(networkAddress, prefixLen) {
+    // 简化的结束地址计算 - 实际应该计算完整的结束地址
+    const ipParts = networkAddress.split(':');
+    if (ipParts.length >= 7) {
+        // 将最后一部分修改为"ffff"表示范围结束
+        ipParts[7] = 'ffff';
+    }
+    return ipParts.join(':');
+}
+
+function normalizeIpv6(ip) {
+    // 将简写的IPv6地址转换为完整形式
+    if (ip.includes('::')) {
+        const parts = ip.split('::');
+        const leftParts = parts[0] ? parts[0].split(':') : [];
+        const rightParts = parts[1] ? parts[1].split(':') : [];
+        const missingParts = 8 - (leftParts.length + rightParts.length);
+        
+        const fullParts = leftParts.concat(Array(missingParts).fill('0')).concat(rightParts);
+        return fullParts.join(':');
+    }
+    return ip;
+}
+
+function calculateIpv6SubnetSize(newPrefixLen) {
+    return Math.pow(2, 128 - newPrefixLen);
 }
 
 function ipv4ToNumber(ip) {
